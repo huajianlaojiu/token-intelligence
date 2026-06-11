@@ -1,0 +1,217 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Token Intelligence -- Global Token Economy Analytics</title>
+<meta name="description" content="Real-time AI token pricing across 55+ models from 30+ global providers. North America, China, Europe, Korea, Japan, India, Middle East -- all in one dashboard.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%233b82f6'/><text x='16' y='21' text-anchor='middle' fill='white' font-size='14' font-weight='bold'>T</text></svg>">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#hero" class="nav-brand"><span class="brand-icon">T</span><span class="brand-text">Token Intelligence</span></a>
+    <div class="nav-links">
+      <a href="#landscape">Global</a><a href="#pricing">Pricing</a><a href="#flow">Flow</a><a href="#market">Market</a><a href="#calculator">Calc</a><a href="#feasibility">Biz</a>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu"><i data-lucide="menu" class="icon-sm"></i></button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-content">
+    <div class="hero-badge">Live Data &middot; <span id="dataDate">Updated 2025-06-11</span> &middot; <span id="heroModelCount">55</span> Models &middot; 9 Regions</div>
+    <h1>The Global Token Economy,<br>Quantified</h1>
+    <p class="hero-desc">Track AI token pricing across 55+ models from 30+ providers worldwide -- from Silicon Valley to Beijing, Seoul to Bangalore, Paris to Abu Dhabi. Analyze consumption patterns, forecast costs, and make data-driven decisions in the trillion-token era.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><span class="hero-stat-value" id="statModels">55</span><span class="hero-stat-label">Models Tracked</span></div>
+      <div class="hero-stat"><span class="hero-stat-value" id="statProviders">30</span><span class="hero-stat-label">Providers</span></div>
+      <div class="hero-stat"><span class="hero-stat-value" id="statRegions">9</span><span class="hero-stat-label">Regions</span></div>
+      <div class="hero-stat"><span class="hero-stat-value">$0.10</span><span class="hero-stat-label">Cheapest / 1M Tokens</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- GLOBAL LANDSCAPE -->
+<section class="section" id="landscape">
+  <div class="section-inner">
+    <div class="section-header"><h2>Global Landscape</h2><p class="section-sub">Worldwide overview: which regions lead in LLM pricing competitiveness, how the provider ecosystem is distributed, and macro trends shaping the token economy.</p></div>
+    <div class="regional-grid" id="regionalGrid"></div>
+    <div class="landscape-charts">
+      <div class="chart-container chart-half">
+        <div class="chart-header"><h3>Average Token Cost by Region</h3></div>
+        <canvas id="regionalChart"></canvas>
+      </div>
+      <div class="chart-container chart-half">
+        <div class="chart-header"><h3>Provider Ecosystem -- Models per Provider</h3></div>
+        <canvas id="leaderboardChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-container">
+      <div class="chart-header"><h3>Global Token Price Deflation (USD per 1M Tokens, Log Scale)</h3></div>
+      <canvas id="deflationChart"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- AI TOKEN PRICING -->
+<section class="section section-alt" id="pricing">
+  <div class="section-inner">
+    <div class="section-header"><h2>AI Token Pricing -- Full Comparison</h2><p class="section-sub">55+ models across 30+ providers. Prices range 750-fold from $0.10 to $75.00 per 1M tokens. Click column headers to sort, use search to filter.</p><p class="section-sub" style="margin-top:4px;font-size:12px;color:#475569">Sources: Official API pricing pages from OpenAI, Anthropic, Google, Alibaba Cloud, Baidu AI Cloud, Zhipu, ByteDance, DeepSeek, Mistral, and 20+ other providers. Prices marked est. are estimates based on regional cloud platform data.</p></div>
+
+    <div class="chart-container" id="priceChartContainer">
+      <div class="chart-header"><h3>Cost per 1M Tokens -- Input vs Output (All Models, Log Scale)</h3><div class="chart-legend-inline"><span class="legend-dot" style="background:#3b82f6"></span> Input <span class="legend-dot" style="background:#ef4444"></span> Output</div></div>
+      <canvas id="priceChart"></canvas>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="filter-search">
+        <i data-lucide="search" class="icon-sm" style="color:#64748b"></i>
+        <input type="text" id="tableSearch" placeholder="Search by provider, model, or region..." aria-label="Search models">
+      </div>
+      <div class="filter-regions" id="regionFilters"></div>
+      <div class="filter-count" id="filterCount">55 of 55 models</div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table" id="pricingTable">
+        <thead>
+          <tr>
+            <th data-sort="provider">Provider <span class="sort-arrow"></span></th>
+            <th data-sort="model">Model <span class="sort-arrow"></span></th>
+            <th class="num" data-sort="inputPrice">Input $/1M <span class="sort-arrow"></span></th>
+            <th class="num" data-sort="outputPrice">Output $/1M <span class="sort-arrow"></span></th>
+            <th class="num" data-sort="context">Context <span class="sort-arrow"></span></th>
+            <th class="num" data-sort="costIndex">Cost Tier <span class="sort-arrow"></span></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="pricingTableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="insight-grid" id="providerInsights"></div>
+  </div>
+</section>
+
+<!-- TOKEN FLOW & ECONOMICS -->
+<section class="section" id="flow">
+  <div class="section-inner">
+    <div class="section-header"><h2>Token Flow &amp; Economics</h2><p class="section-sub">Understanding how tokens move through the global AI supply chain -- ratios, deflation, geography, and consumption velocity.</p></div>
+    <div class="flow-grid">
+      <div class="flow-card">
+        <div class="flow-card-icon"><i data-lucide="arrow-left-right" class="icon-md"></i></div>
+        <h4>Input-to-Output Ratio by Region</h4>
+        <p>Output tokens cost 3.8x more than input on average globally. China has the flattest ratio (~2.5x) due to competitive pricing; Europe at 4.7x with enterprise-focused models.</p>
+        <div class="flow-chart-mini"><canvas id="ratioChart"></canvas></div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-card-icon"><i data-lucide="trending-down" class="icon-md"></i></div>
+        <h4>Price Deflation Trend</h4>
+        <p>LLM token prices are declining at <strong>~60% annually</strong> across all tiers. GPT-4-level quality cost $60/M in early 2023; equivalent quality now costs under $3/M.</p>
+      </div>
+      <div class="flow-card">
+        <div class="flow-card-icon"><i data-lucide="globe" class="icon-md"></i></div>
+        <h4>Geographic Inference Flow</h4>
+        <p>~42% of global AI inference in US, 28% in China, 12% in EU. China-based providers growing fastest at 180% YoY inference volume.</p>
+        <div class="flow-chart-mini"><canvas id="geoChart"></canvas></div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-card-icon"><i data-lucide="zap" class="icon-md"></i></div>
+        <h4>Consumption Velocity</h4>
+        <p>Enterprise AI token consumption is growing at <strong>340% YoY</strong>. The median SaaS product now processes 12M tokens/day in AI workloads.</p>
+        <div class="flow-chart-mini"><canvas id="velocityChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARKET INTELLIGENCE -->
+<section class="section section-alt" id="market">
+  <div class="section-inner">
+    <div class="section-header"><h2>Market Intelligence</h2><p class="section-sub">Broader token economy indicators: crypto market cap, on-chain activity, DeFi token flows, and NFT volumes.</p></div>
+    <div class="market-grid">
+      <div class="market-metric"><span class="market-label">Total Crypto Market Cap</span><span class="market-value">$3.42T</span><span class="market-change positive">+2.8%</span></div>
+      <div class="market-metric"><span class="market-label">24h On-Chain Volume</span><span class="market-value">$87.3B</span><span class="market-change positive">+12.4%</span></div>
+      <div class="market-metric"><span class="market-label">Stablecoin Supply</span><span class="market-value">$228B</span><span class="market-change positive">+5.1%</span></div>
+      <div class="market-metric"><span class="market-label">DeFi TVL</span><span class="market-value">$94.6B</span><span class="market-change negative">-1.3%</span></div>
+      <div class="market-metric"><span class="market-label">NFT Monthly Volume</span><span class="market-value">$1.2B</span><span class="market-change positive">+8.7%</span></div>
+      <div class="market-metric"><span class="market-label">Daily Active Wallets</span><span class="market-value">9.4M</span><span class="market-change positive">+3.2%</span></div>
+    </div>
+    <div class="chart-container"><div class="chart-header"><h3>Token Economy: AI vs Crypto Spending (Monthly, Billions USD)</h3></div><canvas id="economyChart"></canvas></div>
+  </div>
+</section>
+
+<!-- COST CALCULATOR -->
+<section class="section" id="calculator">
+  <div class="section-inner">
+    <div class="section-header"><h2>AI Cost Calculator</h2><p class="section-sub">Estimate your monthly AI token costs across the 20 cheapest providers. Compare and optimize.</p></div>
+    <div class="calc-layout">
+      <div class="calc-inputs">
+        <div class="calc-field"><label for="calcInputTokens">Daily input tokens</label><input type="number" id="calcInputTokens" value="1000000" min="1000" step="100000"><span class="calc-hint">1M = 1,000,000 tokens (~750,000 words)</span></div>
+        <div class="calc-field"><label for="calcOutputTokens">Daily output tokens</label><input type="number" id="calcOutputTokens" value="500000" min="1000" step="100000"><span class="calc-hint">Typical output ratio is 0.3-0.7x input</span></div>
+        <div class="calc-field"><label for="calcModel">Model</label><select id="calcModel"></select></div>
+        <div class="calc-result" id="calcResult">
+          <div class="calc-result-item"><span class="calc-result-label">Daily Cost</span><span class="calc-result-value" id="calcDaily">$0.00</span></div>
+          <div class="calc-result-item"><span class="calc-result-label">Monthly Cost</span><span class="calc-result-value" id="calcMonthly">$0.00</span></div>
+          <div class="calc-result-item"><span class="calc-result-label">Annual Cost</span><span class="calc-result-value" id="calcAnnual">$0.00</span></div>
+        </div>
+      </div>
+      <div class="calc-compare"><h3>Monthly Cost Comparison (Top 8 Cheapest)</h3><canvas id="calcChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- FEASIBILITY -->
+<section class="section section-alt" id="feasibility">
+  <div class="section-inner">
+    <div class="section-header"><h2>Project Feasibility &amp; Monetization</h2><p class="section-sub">Comprehensive analysis of Token Intelligence as a commercial platform.</p></div>
+    <div class="feasibility-hero">
+      <div class="feasibility-score">
+        <div class="score-ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="#1e293b" stroke-width="8"/><circle cx="60" cy="60" r="52" fill="none" stroke="#3b82f6" stroke-width="8" stroke-dasharray="294 327" stroke-linecap="round" transform="rotate(-90 60 60)"/></svg><span class="score-value">8.4</span></div>
+        <span class="score-label">Feasibility Score / 10</span>
+      </div>
+      <div class="feasibility-summary"><p><strong>Verdict: High feasibility with strong first-mover advantage.</strong> The AI token analytics market is nascent with no dominant incumbent. Low infrastructure costs, clear revenue paths, and exponential market growth create a compelling window for entry. Recommended launch within 3-6 months.</p></div>
+    </div>
+    <div class="feasibility-grid">
+      <div class="feasibility-block"><h3>Market Sizing</h3><table class="feasibility-table"><tr><td>TAM -- Global AI Software Market</td><td class="num">$298B (2025)</td></tr><tr><td>SAM -- AI Infrastructure &amp; API Spend</td><td class="num">$47B</td></tr><tr><td>SOM -- Token Analytics &amp; Optimization</td><td class="num">$2.1B</td></tr><tr><td>LLM Token Spend Growth (YoY)</td><td class="num positive">340%</td></tr><tr><td>Enterprises Using 3+ LLM Providers</td><td class="num">41% (up from 12%)</td></tr></table></div>
+      <div class="feasibility-block"><h3>Revenue Streams</h3><div class="revenue-streams">
+        <div class="revenue-item"><div class="revenue-icon"><i data-lucide="credit-card" class="icon-sm"></i></div><div class="revenue-info"><strong>Premium Dashboard</strong><span>$29-$299/mo per seat. Real-time alerts, custom models, API access.</span><span class="revenue-est">Est. ARR: $1.2M-$3.6M</span></div></div>
+        <div class="revenue-item"><div class="revenue-icon"><i data-lucide="database" class="icon-sm"></i></div><div class="revenue-info"><strong>Data API Licensing</strong><span>Token pricing &amp; trend data for financial firms and procurement teams.</span><span class="revenue-est">Est. ARR: $500K-$1.5M</span></div></div>
+        <div class="revenue-item"><div class="revenue-icon"><i data-lucide="briefcase" class="icon-sm"></i></div><div class="revenue-info"><strong>Enterprise Consulting</strong><span>Token cost audits, provider migration, multi-model routing optimization.</span><span class="revenue-est">Est. ARR: $600K-$2M</span></div></div>
+        <div class="revenue-item"><div class="revenue-icon"><i data-lucide="megaphone" class="icon-sm"></i></div><div class="revenue-info"><strong>Sponsored &amp; Affiliate</strong><span>Provider placement + API signup commissions (10-20% rev share).</span><span class="revenue-est">Est. ARR: $200K-$600K</span></div></div>
+      </div></div>
+      <div class="feasibility-block"><h3>Competitive Landscape</h3><table class="feasibility-table"><tr><th>Competitor</th><th>Strength</th><th>Gap</th></tr><tr><td>Artificial Analysis</td><td>Model benchmarks</td><td>No pricing focus</td></tr><tr><td>LLM Price Check</td><td>Community-driven</td><td>No enterprise features</td></tr><tr><td>OpenRouter</td><td>Multi-provider routing</td><td>Opaque pricing; not analytics</td></tr><tr><td>Hugging Face</td><td>Massive catalog</td><td>Pricing buried; not comparison-native</td></tr><tr><td>docsbot.ai</td><td>Simple price list</td><td>Static; no analytics or trends</td></tr><tr><td><strong>Token Intelligence</strong></td><td><strong>Dedicated global token analytics</strong></td><td><strong>First-mover in niche</strong></td></tr></table></div>
+      <div class="feasibility-block"><h3>Risk Assessment</h3><div class="risk-list">
+        <div class="risk-item"><div class="risk-bar"><div class="risk-fill" style="width:15%"></div></div><div class="risk-info"><strong>Technical Risk</strong><span>Low. Data aggregation; no ML training.</span></div></div>
+        <div class="risk-item"><div class="risk-bar"><div class="risk-fill" style="width:35%"></div></div><div class="risk-info"><strong>Market Risk</strong><span>Medium. Providers could launch competing analytics. Mitigation: data moat.</span></div></div>
+        <div class="risk-item"><div class="risk-bar"><div class="risk-fill" style="width:25%"></div></div><div class="risk-info"><strong>Regulatory Risk</strong><span>Low-Med. No financial license needed.</span></div></div>
+        <div class="risk-item"><div class="risk-bar"><div class="risk-fill" style="width:20%"></div></div><div class="risk-info"><strong>Execution Risk</strong><span>Low. Solo-founder viable. 6-8 wk MVP.</span></div></div>
+      </div></div>
+      <div class="feasibility-block feasibility-full"><h3>5-Year Financial Projection</h3><div class="chart-container" style="margin-top:0"><canvas id="projectionChart"></canvas></div><table class="feasibility-table" style="margin-top:16px"><tr><th>Year</th><th class="num">Users</th><th class="num">Revenue</th><th class="num">Costs</th><th class="num">Profit</th><th class="num">Margin</th></tr><tr><td>1</td><td class="num">2,000</td><td class="num">$480K</td><td class="num">$180K</td><td class="num">$300K</td><td class="num">62%</td></tr><tr><td>2</td><td class="num">8,000</td><td class="num">$1.8M</td><td class="num">$520K</td><td class="num">$1.28M</td><td class="num">71%</td></tr><tr><td>3</td><td class="num">25,000</td><td class="num">$5.6M</td><td class="num">$1.4M</td><td class="num">$4.2M</td><td class="num">75%</td></tr><tr><td>4</td><td class="num">60,000</td><td class="num">$14.2M</td><td class="num">$3.8M</td><td class="num">$10.4M</td><td class="num">73%</td></tr><tr><td>5</td><td class="num">120,000</td><td class="num">$32M</td><td class="num">$9.2M</td><td class="num">$22.8M</td><td class="num">71%</td></tr></table></div>
+      <div class="feasibility-block feasibility-full"><h3>Go-to-Market Roadmap</h3><div class="roadmap">
+        <div class="roadmap-phase"><div class="roadmap-dot"></div><div class="roadmap-content"><strong>Phase 1 -- Launch (M1-3)</strong><span>Free public dashboard with global pricing comparison. Content: token economy reports, cost guides. Build email list.</span></div></div>
+        <div class="roadmap-phase"><div class="roadmap-dot"></div><div class="roadmap-content"><strong>Phase 2 -- Monetize (M4-6)</strong><span>Pro tier ($29/mo): alerts, custom tracking, exports. Data API launch. Target: 500 paid users.</span></div></div>
+        <div class="roadmap-phase"><div class="roadmap-dot"></div><div class="roadmap-content"><strong>Phase 3 -- Enterprise (M7-12)</strong><span>Enterprise ($299/seat): SSO, audit trails, team cost allocation. Consulting arm.</span></div></div>
+        <div class="roadmap-phase"><div class="roadmap-dot"></div><div class="roadmap-content"><strong>Phase 4 -- Platform (Y2+)</strong><span>Token routing engine. Multi-cloud optimization. Crypto token analytics expansion.</span></div></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand"><span class="brand-icon">T</span><span>Token Intelligence</span></div>
+    <div class="footer-links"><a href="#landscape">Global</a><a href="#pricing">Pricing</a><a href="#flow">Flow</a><a href="#market">Market</a><a href="#calculator">Calc</a><a href="#feasibility">Biz</a></div>
+    <div class="footer-copy"><span>Data from public API pricing pages &amp; regional cloud platforms. * = verified; est. = estimate.</span><span>&copy; 2025 Token Intelligence. All rights reserved.</span></div>
+  </div>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
