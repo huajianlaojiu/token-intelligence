@@ -11,7 +11,24 @@ const REGIONS = {
   IN: 'India', SEA: 'SE Asia', RU: 'Russia'
 };
 
-const TOKEN_DATA = [
+// === DATA LOADER (fetches data.json, fallback to hardcoded) ===
+let TOKEN_DATA = [];
+let DATA_META = { lastUpdated: null, source: "", totalModels: 0 };
+
+async function loadData() {
+  try {
+    const r = await fetch("data.json");
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const d = await r.json();
+    TOKEN_DATA = d.models || [];
+    DATA_META = { lastUpdated: d.lastUpdated, source: d.source, totalModels: d.totalModels };
+  } catch(e) {
+    useFallbackData();
+  }
+  initAfterData();
+}
+
+function useFallbackData() { TOKEN_DATA = const TOKEN_DATA = [
   // === NORTH AMERICA ===
   { provider: 'OpenAI', model: 'GPT-4o', inputPrice: 2.50, outputPrice: 10.00, context: '128K', region: 'NA', color: '#10a37f', verified: true },
   { provider: 'OpenAI', model: 'GPT-4o-mini', inputPrice: 0.15, outputPrice: 0.60, context: '128K', region: 'NA', color: '#10a37f', verified: true },
@@ -91,6 +108,12 @@ TOKEN_DATA.forEach(d => {
   d.costIndex = Math.round((d.inputPrice * 0.7 + d.outputPrice * 0.3) * 10);
 });
 TOKEN_DATA.sort((a, b) => a.costIndex - b.costIndex);
+;
+}
+
+function initAfterData() {
+  TOKEN_DATA.forEach(d => { d.costIndex = Math.round((d.inputPrice * 0.7 + d.outputPrice * 0.3) * 10); });
+  TOKEN_DATA.sort((a, b) => a.costIndex - b.costIndex);
 // Capability flags
 TOKEN_DATA.forEach(d => {
   d.caps = [];
@@ -746,45 +769,33 @@ function renderFAQ() {
   ).join('');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  renderTable();
-  setupSorting();
-  setupSearch();
-  setupRegionFilter();
-  renderRegionalCards();
-  renderInsights();
-  renderKeyInsights();
-  renderHowToChoose();
-  renderTimeline();
-  renderGlossary();
-  renderFAQ();
-  renderFAQ();
 
-  initRegionalChart();
-  initLeaderboardChart();
-  initDeflationChart();
-  initPriceChart();
-  initRatioChart();
-  initGeoChart();
-  initVelocityChart();
-  initEconomyChart();
-  initProjectionChart();
 
-  populateCalcSelect();
-  recalc();
-  initNav();
+  // Update freshness
+  const dateEl = document.getElementById("dataDate");
+  if (dateEl && DATA_META.lastUpdated) {
+    const d = new Date(DATA_META.lastUpdated);
+    dateEl.textContent = "Updated " + d.toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric"});
+  }
+  // Fetch live crypto data
+  fetchCryptoData();
+}
 
-  document.getElementById('calcInputTokens')?.addEventListener('input', recalc);
-  document.getElementById('calcOutputTokens')?.addEventListener('input', recalc);
-  document.getElementById('calcModel')?.addEventListener('change', recalc);
+async function fetchCryptoData() {
+  try {
+    const r = await fetch("https://api.coingecko.com/api/v3/global");
+    if (!r.ok) return;
+    const cg = await r.json(); if (!cg.data) return;
+    const v = cg.data.total_market_cap?.usd;
+    const vol = cg.data.total_volume?.usd;
+    const ch = cg.data.market_cap_change_percentage_24h_usd;
+    if (v) { const e = document.getElementById("liveMktCap"); if (e) e.textContent = "$" + (v >= 1e12 ? (v/1e12).toFixed(2) + "T" : (v/1e9).toFixed(1) + "B"); }
+    if (vol) { const e = document.getElementById("liveVolume"); if (e) e.textContent = "$" + (vol/1e9).toFixed(1) + "B"; }
+    if (ch !== undefined) { const e = document.getElementById("liveChg"); if (e) { e.textContent = (ch > 0 ? "+" : "") + ch.toFixed(1) + "%"; e.className = "market-change " + (ch >= 0 ? "positive" : "negative"); } }
+  } catch(e) {}
+}
 
-  if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-
-  // Update hero stats
-  const sm = document.getElementById('statModels');
-  const sp = document.getElementById('statProviders');
-  const sr = document.getElementById('statRegions');
-  if (sm) sm.textContent = TOKEN_DATA.length;
-  if (sp) sp.textContent = new Set(TOKEN_DATA.map(d => d.provider)).size;
+loadData();
+> d.provider)).size;
   if (sr) sr.textContent = new Set(TOKEN_DATA.map(d => d.region)).size;
 });
