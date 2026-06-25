@@ -432,3 +432,25 @@ th.sorted-desc .sort-arrow::after { content: ' \25BC'; opacity: 1; }
   .newsletter-input { width: 100%; }
   .newsletter-form { width: 100%; }
 }
+/* === CHART LOADING SKELETON === */
+.chart-container { position: relative; }
+.chart-container canvas { opacity: 1; transition: opacity 0.3s; }
+.chart-loading canvas { opacity: 0; }
+.chart-loading::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.02) 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px;
+}
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+/* === MOBILE NAV SCROLL LOCK === */
+body.nav-open { overflow: hidden; touch-action: none; }
+
+/* === SMOOTH FADE-IN FOR SECTIONS === */
+.section { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .section { animation: none; }
+  .chart-loading::after { animation: none; }
+}

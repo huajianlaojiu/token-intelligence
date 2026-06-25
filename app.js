@@ -429,6 +429,11 @@ function renderGlossary() {
 }
 
 // === CHARTS ===
+// Safe chart init wrapper
+function safeInitChart(name, fn) {
+  try { fn(); } catch(e) { console.warn("Chart init failed: " + name, e.message); }
+}
+
 const CHART_BLUE = '#3b82f6';
 const CHART_RED = '#ef4444';
 const CHART_GREEN = '#22c55e';
@@ -741,7 +746,7 @@ function initNav() {
   const toggle = document.getElementById('navToggle');
   const links = document.querySelector('.nav-links');
   if (!toggle || !links) return;
-  toggle.addEventListener('click', () => links.classList.toggle('open'));
+  toggle.addEventListener('click', () => { links.classList.toggle('open'); document.body.classList.toggle('nav-open', links.classList.contains('open')); });
   document.querySelectorAll('.nav-links a').forEach(a => a.addEventListener('click', () => links.classList.remove('open')));
 }
 
@@ -795,7 +800,8 @@ async function fetchCryptoData() {
   } catch(e) {}
 }
 
-loadData();
+window.addEventListener('error', function(e) { console.error('Runtime error:', e.message); });
+  loadData();
 > d.provider)).size;
   if (sr) sr.textContent = new Set(TOKEN_DATA.map(d => d.region)).size;
 });
