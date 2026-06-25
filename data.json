@@ -1,7 +1,7 @@
 {
-  "lastUpdated": "2026-06-25T10:25:58.611Z",
-  "updateFrequency": "daily",
-  "source": "Official API pricing pages",
+  "lastUpdated": "2026-06-25T10:32:50.401Z",
+  "updateFrequency": "daily (via GitHub Action)",
+  "source": "Official API pricing pages + CoinGecko + regional cloud platforms",
   "totalModels": 55,
   "totalProviders": 30,
   "totalRegions": 9,
