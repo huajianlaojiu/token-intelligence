@@ -1,4 +1,4 @@
-﻿// === TOKEN INTELLIGENCE v3 -- Global Landscape & Data ===
+﻿﻿// === TOKEN INTELLIGENCE v3 -- Global Landscape & Data ===
 // Last updated: 2025-06-11
 
 // === COMPREHENSIVE GLOBAL TOKEN PRICING DATA ===
@@ -273,7 +273,7 @@ const CHART_RED = '#ef4444';
 const CHART_GREEN = '#22c55e';
 const CHART_AMBER = '#f59e0b';
 
-function CHART_DEFAULTS {
+const CHART_DEFAULTS = {
   return {
     responsive: true,
     maintainAspectRatio: false,
