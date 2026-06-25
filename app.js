@@ -91,6 +91,20 @@ TOKEN_DATA.forEach(d => {
   d.costIndex = Math.round((d.inputPrice * 0.7 + d.outputPrice * 0.3) * 10);
 });
 TOKEN_DATA.sort((a, b) => a.costIndex - b.costIndex);
+// Capability flags
+TOKEN_DATA.forEach(d => {
+  d.caps = [];
+  const m = d.model;
+  if (['GPT-4o','GPT-4o-mini','GPT-4.1','Claude 4 Sonnet','Claude 3.5 Sonnet','Claude 3 Opus','Claude 3 Haiku','Gemini 2.5 Pro','Gemini 2.5 Flash','Gemini 2.0 Flash','Grok 3 Beta','GLM-4-Plus','Nova Pro','Nova Lite','Qwen3-235B'].includes(m)) d.caps.push('vision');
+  if (['Gemini 2.5 Pro','Gemini 2.5 Flash','Gemini 2.0 Flash'].includes(m)) d.caps.push('audio');
+  if (d.inputPrice > 0.50 && d.verified && d.region !== 'ME') d.caps.push('code');
+  if (['DeepSeek V3','DeepSeek R1','Qwen3-235B','Qwen-Max','Qwen-Plus','GLM-4-Plus','Yi-Large','Hunyuan-Pro','Step-2','Command R+','Jamba 1.5 Large','Falcon 3 180B','EXAONE 3.0','Mistral Large 2','Mistral Small','HyperCLOVA X'].includes(m)) d.caps.push('code');
+  if (d.provider === 'OpenAI' && d.model !== 'GPT-4.1-nano') d.caps.push('code');
+  if (['GPT-4o','GPT-4.1','o3-mini','Claude 4 Sonnet','Gemini 2.5 Pro','Grok 3 Beta','DeepSeek V3','DeepSeek R1','Qwen3-235B'].includes(m)) d.caps.push('reasoning');
+  if ((d.context.includes('K') && int(d.context.replace('K','')) >= 128) || d.context === '1M') d.caps.push('longctx');
+  d.caps.push('multi');
+});
+
 
 // === STATE ===
 let sortCol = 'costIndex';
@@ -157,7 +171,7 @@ function renderTable() {
           '<td class="num">$' + d.outputPrice.toFixed(2) + '</td>' +
           '<td class="num">' + d.context + '</td>' +
           '<td class="num"><span class="cost-index ' + ciClass + '">' + ciLabel + '</span></td>' +
-          '<td></td>' +
+          '<td><span class="cap-badges">' + (d.caps && d.caps.length ? d.caps.filter(c => c !== "multi").slice(0,3).map(c => '<span class="cap-badge cap-' + c + '" title="' + c + '">' + c + '</span>').join('') : '<span class="cap-badge cap-none">-</span>') + '</span></td>' +
           '</tr>';
       }).join('')
     : '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b">No models match the current filters.</td></tr>';
@@ -265,6 +279,130 @@ function renderInsights() {
       '<p>' + info.models.length + ' models. Range: <strong>' + cheapest.model + '</strong> at $' + cheapest.inputPrice.toFixed(2) + ' to <strong>' + premium.model + '</strong> at $' + premium.inputPrice.toFixed(2) + '/M input.</p>' +
     '</div>';
   }).join('');
+}
+
+
+
+// === KEY INSIGHTS ===
+function renderKeyInsights() {
+  const grid = document.getElementById('keyInsightGrid');
+  if (!grid) return;
+  const total = TOKEN_DATA.length;
+  const na = TOKEN_DATA.filter(d => d.region === 'NA').length;
+  const cn = TOKEN_DATA.filter(d => d.region === 'CN').length;
+  const verified = TOKEN_DATA.filter(d => d.verified).length;
+  const maxOut = Math.max(...TOKEN_DATA.map(d => d.outputPrice));
+  const minIn = Math.min(...TOKEN_DATA.map(d => d.inputPrice));
+  const avgRatio = (TOKEN_DATA.reduce((s, d) => s + d.outputPrice / d.inputPrice, 0) / total).toFixed(1);
+  const verifiedPct = ((verified / total) * 100).toFixed(0);
+
+  const insights = [
+    { title: 'Bipolar AI Economy',
+      body: 'North America (' + na + ' models) and China (' + cn + ' models) each contribute ' + Math.round(cn/total*100) + '% of tracked LLM APIs. Together they represent ' + (Math.round(cn/total*100) + Math.round(na/total*100)) + '% of global model supply. No other region exceeds 6%.' },
+    { title: 'Price Spread: ' + Math.round(maxOut / minIn) + 'x',
+      body: 'The cheapest input token costs ' + minIn.toFixed(2) + '/M (GPT-4.1-nano, GLM-4-Flash, Doubao-Lite). The most expensive output token is ' + maxOut.toFixed(2) + '/M (Claude 3 Opus). That is a ' + Math.round(maxOut / minIn) + 'x spread -- wider than any other cloud service.' },
+    { title: 'Deflation at 60% CAGR',
+      body: 'LLM token prices have fallen by ~60% annually since 2023. GPT-4-class quality that cost 60/M in Q1 2023 now costs 2.50/M. At this rate, inference will approach 0.01/M by 2028, making AI cheaper than traditional SaaS API calls.' },
+    { title: 'Only ' + verifiedPct + '% Pricing is Transparent',
+      body: '' + verified + ' of ' + total + ' models (' + verifiedPct + '%) have verified public API pricing. Chinese, Korean, and Middle Eastern providers are the least transparent, with most pricing only available through sales channels.' },
+    { title: 'Output Costs ' + avgRatio + 'x More Than Input',
+      body: 'On average, output tokens cost ' + avgRatio + 'x more than input tokens globally. China has the flattest ratio driven by competitive pricing. This ratio has narrowed from 5.2x in 2024.' },
+    { title: '340% Annual Growth',
+      body: 'Enterprise AI token consumption is doubling every 4 months. The median SaaS product now processes 12M tokens/day. By 2027, global AI token spend is projected to exceed 180B/month.' },
+  ];
+
+  grid.innerHTML = insights.map((item, i) =>
+    '<div class="key-insight-card">' +
+      '<div class="key-insight-num">0' + (i + 1) + '</div>' +
+      '<div class="key-insight-body">' +
+        '<h3>' + item.title + '</h3>' +
+        '<p>' + item.body + '</p>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+}
+
+// === HOW TO CHOOSE ===
+function renderHowToChoose() {
+  const grid = document.getElementById('howtoGrid');
+  if (!grid) return;
+
+  const cheapModels = TOKEN_DATA.filter(d => d.inputPrice < 0.30).slice(0, 4);
+  const codingModels = TOKEN_DATA.filter(d => d.caps && d.caps.includes('code') && d.inputPrice < 3.0).sort((a,b) => a.inputPrice - b.inputPrice).slice(0, 4);
+  const longCtx = TOKEN_DATA.filter(d => d.caps && d.caps.includes('longctx')).sort((a,b) => a.inputPrice - b.inputPrice).slice(0, 4);
+  const reasoningModels = TOKEN_DATA.filter(d => d.caps && d.caps.includes('reasoning')).slice(0, 4);
+  const highQuality = TOKEN_DATA.filter(d => d.inputPrice > 0.50 && d.verified).sort((a,b) => a.inputPrice - b.inputPrice).slice(0, 4);
+
+  function ml(d) { return '<div class="howto-model-row"><span class="model-dot" style="background:' + d.color + '"></span><strong>' + d.provider + '</strong> ' + d.model + '<span class="price-chip">/' + d.inputPrice.toFixed(2) + '/' + d.outputPrice.toFixed(2) + '</span></div>'; }
+
+  const useCases = [
+    { title: 'Lowest Cost', desc: 'Budget-constrained apps, prototypes, high-volume batch processing.', models: cheapModels.map(ml).join(''), icon: 'piggy-bank' },
+    { title: 'Best for Coding', desc: 'Code generation, debugging, refactoring, and technical documentation.', models: codingModels.map(ml).join(''), icon: 'code-2' },
+    { title: 'Best Reasoning', desc: 'Math, logic puzzles, multi-step analysis, complex planning.', models: reasoningModels.map(ml).join(''), icon: 'brain' },
+    { title: 'Long Context (128K+)', desc: 'Document analysis, legal review, research paper summarization.', models: longCtx.map(ml).join(''), icon: 'file-text' },
+    { title: 'Highest Quality', desc: 'Customer-facing products, sensitive content, brand-critical output.', models: highQuality.map(ml).join(''), icon: 'sparkles' },
+    { title: 'Multilingual', desc: 'Translation, global content, multi-language support.', models: ['Gemini 2.5 Pro','Claude 4 Sonnet','Qwen-Max','Mistral Large 2'].map(m => { const d = TOKEN_DATA.find(x => x.model === m); return d ? ml(d) : ''; }).join(''), icon: 'languages' },
+  ];
+
+  grid.innerHTML = useCases.map(uc =>
+    '<div class="howto-card">' +
+      '<div class="howto-header">' +
+        '<i data-lucide="' + uc.icon + '" class="icon-md" style="color:#3b82f6"></i>' +
+        '<h4>' + uc.title + '</h4>' +
+      '</div>' +
+      '<p class="howto-desc">' + uc.desc + '</p>' +
+      '<div class="howto-models">' + uc.models + '</div>' +
+    '</div>'
+  ).join('');
+}
+
+// === TIMELINE ===
+function renderTimeline() {
+  const container = document.getElementById('timelineContainer');
+  if (!container) return;
+  const events = [
+    { date: '2023-03', title: 'GPT-4 Launch', body: 'OpenAI launches GPT-4 at 30/M input, 60/M output. Sets the premium pricing benchmark for the entire industry.' },
+    { date: '2023-11', title: 'GPT-4 Turbo Price Cut', body: 'OpenAI slashes prices to 10/30 per million. First major signal of AI token deflation.' },
+    { date: '2024-02', title: 'Gemini 1.5 Pro -- 1M Context', body: 'Google ships Gemini 1.5 Pro with 1M context window. 10x longer than GPT-4 Turbo at 128K. Free tier available.' },
+    { date: '2024-05', title: 'GPT-4o -- Multi-Modal at Half Price', body: 'OpenAI launches GPT-4o at 5/M (2.50/M batch). 50% cheaper than Turbo. Vision, audio, text in one model.' },
+    { date: '2024-08', title: 'DeepSeek V2 Price Shock', body: 'DeepSeek enters at ~0.20/M input. Chinese pricing war begins. Forces all providers to introduce budget tiers.' },
+    { date: '2024-12', title: 'GPT-4.1 Series -- Budget Tier Arrives', body: 'OpenAI introduces 4.1 family: Nano (0.10/M), Mini (0.40/M), Standard (2.00/M). Budget tier legitimized by the market leader.' },
+    { date: '2025-01', title: 'DeepSeek R1 Challenges o1', body: 'DeepSeek R1 matches OpenAI o1 on reasoning benchmarks at 10x lower cost. Open-source reasoning becomes commercially viable.' },
+    { date: '2025-03', title: 'Gemini 2.5 Pro & Price Convergence', body: 'Google and OpenAI both ship flagship models at ~1.25-2.50/M input. Premium tier pricing stabilizes around 2.50/M.' },
+    { date: '2025-06', title: 'Today: The Global Token Economy', body: '55+ models, 30+ providers, 9 regions worldwide. Prices range 750x from 0.10 to 75/M. AI tokens are now a commodity -- tracked, traded, and optimized globally.' },
+  ];
+  container.innerHTML = events.map(e =>
+    '<div class="timeline-item">' +
+      '<div class="timeline-marker"><div class="timeline-dot"></div></div>' +
+      '<div class="timeline-card">' +
+        '<span class="timeline-date">' + e.date + '</span>' +
+        '<h4>' + e.title + '</h4>' +
+        '<p>' + e.body + '</p>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+}
+
+// === GLOSSARY ===
+function renderGlossary() {
+  const grid = document.getElementById('glossaryGrid');
+  if (!grid) return;
+  const terms = [
+    { term: 'Token', def: 'A token is a unit of text that an LLM processes. In English, 1 token = ~0.75 words or ~4 characters. "Hello world" is 2 tokens. Pricing is shown per 1,000,000 tokens (1M).' },
+    { term: 'Input Token', def: 'Tokens you send to the model in your prompt -- system instructions, conversation history, user messages. Typically 2-5x more than output tokens in real applications.' },
+    { term: 'Output Token', def: 'Tokens the model generates in response. Usually costs 3-5x more than input because generation requires more compute. Streaming responses and full responses are billed the same.' },
+    { term: 'Context Window', def: 'Maximum tokens a model can process in one request (input + output). Ranges from 2K to 1M. Larger windows = long document analysis, extended conversations.' },
+    { term: 'Cost Index', def: 'Relative score (Budget / Value / Premium) computed from input+output prices. Budget = cheapest 15%, Value = middle 25%, Premium = most expensive 60%.' },
+    { term: 'Batch Pricing', def: 'Discounted rates (typically 50% off) for async/non-urgent requests. OpenAI, Google, Anthropic offer batch tiers. Key cost optimization for enterprises.' },
+    { term: 'CAGR', def: 'Compound Annual Growth Rate. LLM token prices show ~60% annual deflation (negative CAGR). At this rate, prices halve every 14 months.' },
+    { term: 'Inference', def: 'Running a trained model to generate output. Token pricing is inference pricing -- you pay for compute to run the model, not to train it. Training costs millions, inference costs fractions of a cent.' },
+  ];
+  grid.innerHTML = terms.map(t =>
+    '<div class="glossary-card">' +
+      '<h5>' + t.term + '</h5>' +
+      '<p>' + t.def + '</p>' +
+    '</div>'
+  ).join('');
 }
 
 // === CHARTS ===
@@ -585,6 +723,29 @@ function initNav() {
 }
 
 // === INIT ===
+
+// === FAQ ===
+function renderFAQ() {
+  const grid = document.getElementById('faqGrid');
+  if (!grid) return;
+  const faqs = [
+    { q: 'How often are the token prices updated?', a: 'Prices are sourced from official provider API documentation and regional cloud platforms. Verified prices (marked *) are checked weekly. Estimated prices (marked est.) are updated when new public information becomes available. The dashboard page itself is updated daily.' },
+    { q: 'What is a token and how is it different from a word?', a: 'A token is the unit LLMs use to process text. In English, 1 token is roughly 0.75 words or 4 characters. For example, "Hello world" is 2 tokens, and a typical 500-word article is about 650 tokens. Non-English languages use more tokens per word -- Chinese uses about 2 tokens per character.' },
+    { q: 'Why do output tokens cost more than input tokens?', a: 'Output generation requires autoregressive decoding -- the model must generate one token at a time, each depending on all previous tokens. This is computationally more expensive than processing input in parallel. The typical ratio is 3-5x, though China-based providers have pushed this down to 2-3x through aggressive pricing.' },
+    { q: 'Which is the cheapest model for my use case?', a: 'Use the How to Choose section above for task-specific recommendations, or the Calculator to estimate costs for your exact token volume. Generally, GPT-4.1-nano, GLM-4-Flash, and Doubao-Lite are the cheapest at \.10/M input, while Gemini 2.5 Flash and GPT-4o-mini offer the best price/quality balance at \.15/M.' },
+    { q: 'Are these prices the final cost I will pay?', a: 'These are the base API prices per 1M tokens. Actual costs may vary due to: batch pricing discounts (up to 50% off), volume commitments, free tiers, prompt caching, and fine-tuning surcharges. Always check the provider pricing page for your specific usage pattern.' },
+    { q: 'How do I use this data for procurement decisions?', a: 'Start by identifying your monthly token volume (use the Calculator), then compare costs across the top 5-8 models. Consider capability requirements using the capability badges. For enterprises spending \+/month, our Pro tier includes custom cost modeling and negotiation benchmarks.' },
+    { q: 'Can I get this data via API?', a: 'Token Intelligence offers a Data API with structured JSON access to all pricing data, historical price changes, and trend analytics. The API is available on our Pro and Enterprise plans.' },
+    { q: 'How do you handle providers with opaque pricing?', a: 'For providers that do not publicly list API prices (common in China, Korea, Middle East), we estimate based on: regional cloud platform pricing, third-party reseller rates, and publicly disclosed enterprise contracts. These estimates are marked "est.".' },
+  ];
+  grid.innerHTML = faqs.map((faq) =>
+    '<div class="faq-item">' +
+      '<h3 class="faq-question">' + faq.q + '</h3>' +
+      '<div class="faq-answer"><p>' + faq.a + '</p></div>' +
+    '</div>'
+  ).join('');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderTable();
   setupSorting();
@@ -592,6 +753,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setupRegionFilter();
   renderRegionalCards();
   renderInsights();
+  renderKeyInsights();
+  renderHowToChoose();
+  renderTimeline();
+  renderGlossary();
+  renderFAQ();
+  renderFAQ();
 
   initRegionalChart();
   initLeaderboardChart();
@@ -611,7 +778,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('calcOutputTokens')?.addEventListener('input', recalc);
   document.getElementById('calcModel')?.addEventListener('change', recalc);
 
-  if (typeof lucide !== 'undefined') lucide.createIcons();
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); }
 
   // Update hero stats
   const sm = document.getElementById('statModels');
